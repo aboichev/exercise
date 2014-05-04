@@ -21,7 +21,7 @@ Challenge.prototype.processInput = function(value) {
   if(this.input.length < this.typeImpl.result.apply(null, this.args).toString().length) {
     return 'maybe';
   }
-  if(this.input === this.typeImpl.result.apply(null, this.args)) {
+  if(this.input == this.typeImpl.result.apply(null, this.args)) {
     return 'correct';
   }
   return 'incorrect';
