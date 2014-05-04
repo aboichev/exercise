@@ -1,0 +1,19 @@
+{
+// Configure your Run and Preview buttons here.
+
+// Run button configuration
+  "commands": {
+        "Start Dev": "grunt serve",
+				"Run tests": "grunt test",
+				"Build": "grunt"
+				
+  },
+
+// Preview button configuration
+  "preview": {
+        "Project Index (static)": "https://{{domain}}/{{index}}",
+        "Current File (static)": "https://{{domain}}/{{filepath}}",
+        "Box URL": "http://{{domain}}:9000/",
+        "Box URL SSL": "https://{{domain}}:9500/"
+  }
+}

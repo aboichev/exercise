@@ -1,0 +1,10 @@
+<div class="header">
+  <h3 class="text-muted">Exercise</h3>
+</div>
+
+<ul class="nav nav-stacked nav-pills">
+	 <li class="active"><a href="/">Main Menu</a></li>
+	 <li ng-repeat="item in menuItems">
+		 <a ng-href="{{item.url}}">{{ item.title }}</a>
+	 </li>
+</ul>
