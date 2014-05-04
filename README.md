@@ -1,4 +1,4 @@
 exercise
 ========
 
-My exercise framework and demo app
+My exercise framework and demo app in AngularJS.
