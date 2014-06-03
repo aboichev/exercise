@@ -1,8 +1,10 @@
 'use strict';
+var Challenge = kabanizer.core.Challenge;
 
 describe('Challenge - processInput()', function () {
 	
 	var currType;
+  
 	
   beforeEach(module('ChallengeTypes'));
 		

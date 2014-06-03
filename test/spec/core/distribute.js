@@ -11,7 +11,7 @@ describe('Distribute function in excercise', function () {
 	
   beforeEach(function () {
     // init excercise
-		exercise = new Exercise(types, {});
+		exercise = new kabanizer.core.Exercise(types, {});
   });
 	
 	it('should distribute 2 items in 2 groups', function () {

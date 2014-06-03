@@ -1,3 +1,5 @@
+var Challenge = kabanizer.core.Challenge;
+
 describe('Generate arguments', function () {   
 	
   var exercise;
@@ -9,7 +11,7 @@ describe('Generate arguments', function () {
 		inject(function(add2Ints) {
     	types = {'add2Ints': add2Ints};
   	});
-    // init excercise
+    	// init excercise
 		exercise = new Exercise(types, {});
   });
 	
@@ -47,5 +49,5 @@ describe('Generate arguments', function () {
 		expect(result).toBeDefined();
 		expect(result.length).toEqual(8);
 	});	
-	
+
 });
