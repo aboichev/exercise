@@ -1,13 +1,18 @@
 'use strict';
 
-angular
-  .module('ExerciseApp', [
-    'ngCookies',
-    'ngResource',
-    'ngSanitize',
-    'ngRoute'
+angular.module('ChallengeTypes', []);
+angular.module('Controllers', []);
+angular.module('ChallengeTypes', []);
+angular.module('CoreServices', []);
+
+angular.module('ExerciseApp', [
+		'ui.bootstrap',
+		'ngRoute',
+		'Controllers',
+		'ChallengeTypes',
+		'CoreServices'
   ])
-  .config(function ($routeProvider) {
+	.config(function ($routeProvider, settingsProvider) {
     $routeProvider
       .when('/', {
         templateUrl: 'views/mainMenu.html',
@@ -32,4 +37,12 @@ angular
       .otherwise({
         redirectTo: '/'
       });
+		
+		 // register types from types module.
+		 var typesModule = angular.injector(['ChallengeTypes']);
+     var add2Ints = typesModule.get('add2Ints');
+		
+		 //settingsProvider.register('add2Ints', add2Ints);
+		 //console.log(settingsProvider.getRegistedTypes());
+				
   });
