@@ -1,21 +1,25 @@
-angular.module('ChallengeTypes').factory('add2Ints', function() {
-	
-	var defaultArg = {
-		min: 1,
-		max: 9,
-		exclude: [],
-		include: []
-  };
-	
+angular.module('ChallengeTypes')
+.factory('add2Ints', function () {	
   return {
     label: '+',
-    result: function() {
+		args: 2,
+    result: function () {
       return arguments[0] + arguments[1];
     },
-    toString: function() {
+    toString: function () {
       return arguments[0] + ' + ' + arguments[1];
+    }
+  };
+})
+.factory('subtruct2Ints', function () {	
+  return {
+    label: '-',
+		args: 2,
+    result: function () {
+      return arguments[0] - arguments[1];
     },
-    params: 2,	
-		defaultArgs: [defaultArg, defaultArg]
-  }
+    toString: function () {
+      return arguments[0] + ' - ' + arguments[1];
+    }
+  };
 });

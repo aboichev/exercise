@@ -12,7 +12,9 @@ describe('Generate arguments', function () {
     	types = {'add2Ints': add2Ints};
   	});
     	// init excercise
-		exercise = new Exercise(types, {});
+		exercise = new Exercise(types, {
+			types: [{ id: 'add2Ints' } ]			
+		});
   });
 	
 	it('should shuffle array and have the same length', function () {

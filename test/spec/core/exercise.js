@@ -4,7 +4,7 @@ var Challenge = kabanizer.core.Challenge;
 
 describe('Generating challenges in excercise', function() {
 	// helper funciton
-  var feedCorrectAnswer = function (challenge, callback) {          
+  var feedCorrectAnswer = function (challenge, callback) {   
   	var i = 0, out, answer = (''+ challenge.typeImpl.result.apply(null, challenge.args)).split();
     for (; i < answer.length; i +=1) {
       out = challenge.processInput(answer[i]);
@@ -25,9 +25,9 @@ describe('Generating challenges in excercise', function() {
 	it('should return 2 challanges and then null', function() {
 		var exercise = new Exercise(types, { 
 			numOfChallenges: 2,
-			typesConf: [{ id: 'add2Ints' } ]
+			types: [{ id: 'add2Ints' } ]
 		});
-
+		debugger;
 		var challenge1 = exercise.nextQuestion();
 		expect(challenge1 instanceof Challenge).toBe(true);
 		expect(feedCorrectAnswer(challenge1)).toBe('correct');
@@ -41,7 +41,7 @@ describe('Generating challenges in excercise', function() {
 		var exercise = new Exercise(types, { 
 			numOfChallenges: 1,
 			// setup 1 type 
-			typesConf: [ { 
+			types: [ { 
 					id: 'add2Ints',
 					args: [
 						{include: [1]}, // first argument
