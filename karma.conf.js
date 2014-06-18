@@ -20,8 +20,9 @@ module.exports = function(config) {
       'app/bower_components/angular-route/angular-route.js',
       'app/scripts/*.js',
       'app/scripts/**/*.js',
-      // 'test/mock/**/*.js',
+      'test/mock/**/*.js',
       'test/spec/**/*.js'
+      //'test/spec/core/exercise.js'
     ],
 
     // list of files / patterns to exclude
@@ -36,7 +37,7 @@ module.exports = function(config) {
 
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: false,
+    autoWatch: true,
 
 
     // Start these browsers, currently available:
@@ -47,7 +48,7 @@ module.exports = function(config) {
     // - Safari (only Mac)
     // - PhantomJS
     // - IE (only Windows)
-    //browsers: ['PhantomJS'],
+    browsers: ['PhantomJS'],
 
 
     // Continuous Integration mode

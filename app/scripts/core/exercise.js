@@ -1,7 +1,7 @@
 /*
  *  1. Exercise has some number of challenges.
  *	2. Challenges can be of different types.
- *	3. For each type there is a settings for each argument of a challenge. (min, max, include, exclude)
+ *	3. For each type there is a options object for each argument of a challenge. (min, max, include, exclude)
  *	4. nextChallenge() returns a challenge of random type.
 */
 'use strict';
@@ -35,138 +35,145 @@ var kabanizer = { core: {} };
       return 'correct';
     }
     return 'incorrect';
-  };	
+  };
+	
+	function IncludedIterator(arr) {
+   this.arr = arr || [];
+	 this.i = 0;		
+	}
+	
+	IncludedIterator.prototype.next = function () {
+			var len = this.arr.length;
+			if (this.i < len) {
+				this.i += 1;
+				return this.arr[this.i - 1];				
+			}	
+			return null;
+	};
 
-  function Exercise(types, settings) {
-  	
-    var i = 0, j = 0, self = this;
-  	
-  	this.defaults = {
-  		numOfChallenges: 10,
-  		types: []
-  	};
+	
+	function RangedIterator(start, end) {
+		this.start = start !== undefined ? start : null;
+		this.end = end !== undefined ? end : null;
+	 this.i = this.start;		
+	}
+	
+	RangedIterator.prototype.next = function () {
+		
+		if (this.start === null || this.end === null ) {
+				return null;
+		}
+		if (this.i <= this.end) {
+			this.i += 1;
+			return this.i - 1;
+		}	
+		return null;
+	};
+	
+	function ArgumentGenerator (config) {	
+		this.start = config.start !== undefined ? config.start : null;
+		this.end = config.end !== undefined ? config.end : null;
+		this.includedIter = new IncludedIterator(config.include);
+		this.rangedIter = new RangedIterator(this.start, this.end);
+		this.excludedVals = config.exclude || [];
+		this.excludedCounter = 0;
+		this.counter = 0;
+	}
+	
+	ArgumentGenerator.prototype.next = function () {
+	
+			var valueFromIncluded = this.includedIter.next(),
+					valueFromRanged = null,
+					rangedSize = 0;
+		
+			if (this.start !== null && this.end !== null) {
+				rangedSize = this.end - this.start + 1;
+			}
+			
+			if (valueFromIncluded) {				
+				if (this.excludedVals.indexOf(valueFromIncluded) >= 0) {					
+					return this.next();
+				}
+				this.counter += 1;
+				return valueFromIncluded;
+			}
+		
+			
+			valueFromRanged = this.rangedIter.next();
+			if (valueFromRanged != null) { // includes 0
+				if (this.excludedVals.indexOf(valueFromRanged) >= 0) {
+					// prevent endless loop
+					this.excludedCounter += 1;
+					if (this.excludedCounter < rangedSize) {
+						return this.next();						
+					}						
+				}
+				this.counter += 1;
+				return valueFromRanged;				
+			}
+			
+			// if all values depleted start over
+			// only if prior to that it produced at least one value
+			if (this.counter > 0) {
+				this.includedIter.i = 0;
+				this.rangedIter.i = this.start;
+				this.counter  = 0;
+				return this.next();
+			}
+			return null;
+	}
+	
+
+  function Exercise(types, options) {  	
+		
   	this.types = types;
-  	this.config = angular.extend(this.defaults, settings);
+  	this.options = options;
     this.argumentVals = [];
     this.currIx = 0;
-    this.history = [];
 		
-		if (this.config.types.length == 0) {
+		if (options.types.length == 0) {
 			throw new Error("types must have at least one element.");
 		}
+				
 		// distribute questions between differnt types from typesConf array
-    var argsSizes = this.distribute(this.config.numOfChallenges,
-  																	this.config.types.length);
+    var sizesByType = this.distribute(this.options.numOfChallenges,
+  																	this.options.types.length);
 		
-		// generate values for all challange arguments
-    self.forEachType(types, argsSizes, function (config) {
-  		var argsValues = [];
-			
-  		self.forEachArgument(config, function (argConfig) {
-					argsValues.push(self.generateValues(argConfig, config.size));
-  		});
-  		// transform values
-			self.forEachChallenge(argsValues, function (values) {
-				self.argumentVals.push({ typeId: config.id,	values: values });		
-			});
-    });
+		// for each type of challenge in options
+		for (var i = 0; i < sizesByType.length; i += 1) {
+			var typeOpts = options.types[i],
+					size = sizesByType[i],
+					args = typeOpts.args || [];
+
+			//make generator for each argument
+			var gens = [];
+			for(var k = 0; k < args.length; k += 1) {
+					gens.push(new ArgumentGenerator(args[k]));
+			}
+			// for each challenge in typeBucket
+			for(var j = 0; j < size; j += 1) {	
+				var data = { typeId: typeOpts.id,	values: [] };
+				// for each argument get next value
+				for(var m = 0; m < gens.length; m += 1) {
+						data.values.push(gens[m].next());
+				}
+				this.argumentVals.push(data);			
+			}
+		}	
   	
-  	self.argumentVals = self.shuffle(self.argumentVals); 
+  	this.argumentVals = this.shuffle(this.argumentVals);
   }
  
  	Exercise.prototype.nextQuestion = function () {
-			console.log("Args Values", this.argumentVals);
       if (this.currIx < this.argumentVals.length) {
   			
         var data = this.argumentVals[this.currIx];
-  			
-        this.currIx += 1;
-        this.history.push(data);
+        this.currIx += 1;	
         return new Challenge(this.types[data.typeId], data.values);
       }
       return null;
   };
-
-  Exercise.prototype.generateValues = function(arg, howMany) {
-			var result = [],
-					includedValues = this.getFromIncluded(howMany,
-																								arg.include || [],
-																								arg.exclude || []);
-					
-			if (includedValues.length > 0) {
-					result.push(includedValues);
-					return result; 
-			}
-
-			result.push( this.getFromRange(arg.size,
-																		 arg.min || 1,
-																		 arg.max || 9,
-																		 arg.exclude || []));
-			return result;
-  };
- 
-  Exercise.prototype.forEachType = function (types, sizesArray, callback) {
-    var i = 0, config, typeImpl;
-    for(; i < sizesArray.length; i += 0) {
-				config = this.config.types[i];
-			  config.size = sizesArray[i];
-				// if argument configs not provided, create using defaults
-			  typeImpl = types[config.id];
-			  if (!config.args) {
-					config.args = [];
-					for(i = 0; i < typeImpl.args; i += 1) {
-						config.args.push(defautArgConfig);
-					}
-  		}
-			callback(config);
-		}
-  };
-
-  Exercise.prototype.forEachArgument = function (config, callback) {
-    var i = 0;
-    for(; i < config.args.length; i += 1) {
-			callback(config.args[i]);
-		}
-  };
-
-  Exercise.prototype.forEachChallenge = function (values, callback) {	
-			var i = 0, j = 0, args, size = values[0].length;
-			for (; i < size; i += 1) {
-				args = [];
-				for(; j < values.length; j += 1) {
-						args.push(values[j][i]);
-				}
-				callback(args);
-  		}
-  };
 	
-  Exercise.prototype.getFromIncluded = function(max, include, exclude) {
-    var i = 0, args = [];
-    for(; i < include.length && args.length < max; i += 0) {
-      if(exclude.indexOf(include[i]) >= 0) {
-        continue;
-      }
-      args.push(include[i]);
-    }
-    return args;
-  };
-
-  //Exercise.prototype.getRandomChallengeData = function() {
-  //  var ix = Math.floor(Math.random() * this.challengeData.length);
-  //  return this.challengeData[ix];
-  //};
-
-  Exercise.prototype.getFromRange = function(max, start, end, exclude) {    
-    var i = start,
-        args = [];
-    for(; i <= end && args.length < max; i += 1) {
-      if(exclude.indexOf(i) >= 0) {
-        continue;
-      }
-      args.push(i);
-    }
-    return args;
-  };
   // Fisher-Yates shuffle algorithm.
   Exercise.prototype.shuffle = function(arr) {
     for(var i = arr.length - 1; i > 0; i--) {
@@ -190,7 +197,8 @@ var kabanizer = { core: {} };
 
 	kabanizer.core.Challenge = Challenge;
   kabanizer.core.Exercise = Exercise;
-
+	kabanizer.core.ArgumentGenerator = ArgumentGenerator;
+	
   // export object
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = kabanizer.core;

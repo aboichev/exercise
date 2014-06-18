@@ -23,11 +23,17 @@ describe('Generating challenges in excercise', function() {
 	});
 	
 	it('should return 2 challanges and then null', function() {
+
 		var exercise = new Exercise(types, { 
 			numOfChallenges: 2,
-			types: [{ id: 'add2Ints' } ]
+			types: [{
+					id: 'add2Ints',
+					args: [
+						{include:[1]},
+						{include:[1]}
+					]
+				}]
 		});
-		debugger;
 		var challenge1 = exercise.nextQuestion();
 		expect(challenge1 instanceof Challenge).toBe(true);
 		expect(feedCorrectAnswer(challenge1)).toBe('correct');
@@ -44,8 +50,8 @@ describe('Generating challenges in excercise', function() {
 			types: [ { 
 					id: 'add2Ints',
 					args: [
-						{include: [1]}, // first argument
-						{include: [1]}  // second argument
+						{include: [3]},
+						{include: [3]}  
 					]
 				}]
 		});
@@ -53,9 +59,53 @@ describe('Generating challenges in excercise', function() {
 		var challenge1 = exercise.nextQuestion();			
 
 		expect(challenge1 instanceof Challenge).toBe(true);		
-		expect(challenge1.args[0]).toEqual(1);
-		expect(challenge1.args[1]).toEqual(1);				
+		expect(challenge1.args[0]).toEqual(3);
+		expect(challenge1.args[1]).toEqual(3);				
 	});	
+	
+	it('should exclude a value from include list', function() {
+		debugger;
+		var exercise = new Exercise(types, { 
+			numOfChallenges: 1,
+			// setup 1 type 
+			types: [ { 
+					id: 'add2Ints',
+					args: [
+						{ include: [2, 1, 3], exclude: [2, 1]}, // first argument
+						{ include: [2, 1, 3], exclude: [2, 1]}  // second argument
+					]
+				}]
+		});
+		
+		var challenge1 = exercise.nextQuestion();	
+		console.log(challenge1.args);
+		expect(challenge1 instanceof Challenge).toBe(true);		
+		expect(challenge1.args[0]).toEqual(3);
+		expect(challenge1.args[1]).toEqual(3);		
+		
+	});
+
+	it('should exclude a value from ranged list', function() {
+		
+		var exercise = new Exercise(types, { 
+			numOfChallenges: 1,
+			// setup 1 type 
+			types: [ { 
+					id: 'add2Ints',
+					args: [
+						{ start: 1, end: 5, exclude: [3, 1]}, // first argument
+						{ start: 1, end: 5, exclude: [3, 1]}  // second argument
+					]
+				}]
+		});
+		
+		var challenge1 = exercise.nextQuestion();	
+		
+		expect(challenge1 instanceof Challenge).toBe(true);		
+		expect(challenge1.args[0]).toEqual(2);
+		expect(challenge1.args[1]).toEqual(2);
+	});	
+	
 });
 
 describe('SettingsProvider', function() {
