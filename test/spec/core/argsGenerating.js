@@ -1,5 +1,6 @@
 var Challenge = kabanizer.core.Challenge;
 var ArgumentGenerator = kabanizer.core.ArgumentGenerator;
+var shuffle = kabanizer.core.shuffle;
 
 describe('Generate arguments', function () {   
 	
@@ -20,7 +21,7 @@ describe('Generate arguments', function () {
 	
 	it('should shuffle array and have the same length', function () {
 		var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-		var newArr = exercise.shuffle(arr);
+		var newArr = shuffle(arr);
 		expect(newArr.length).toEqual(10);
 	});
 	
@@ -55,18 +56,6 @@ describe('Generate arguments', function () {
 		expect(result[1]).toEqual(7);
 	});
 	
-	it('should generate one values using single value in include list', function () {
-		
-		var options = { include: [7] };
-		var gen = new ArgumentGenerator(options);
-		var result = [];
-
-		result.push(gen.next());
-
-		expect(result.length).toEqual(1);
-		expect(result[0]).toEqual(7);
-	});
-	
 	it('should generate values using include list and ranged', function () {
 		
 		var options = { include: [1, 2], start: 3, end: 4 };		
@@ -76,7 +65,7 @@ describe('Generate arguments', function () {
 		for(var i = 0; i < 4; i += 1) {
 			result.push(gen.next());
 		}
-
+		
 		expect(result.length).toEqual(4);
 		expect(result[0]).toEqual(1);
 		expect(result[1]).toEqual(2);
