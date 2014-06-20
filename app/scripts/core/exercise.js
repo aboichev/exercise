@@ -9,7 +9,7 @@ var kabanizer = { core: {} };
 
 (function () {
 	
-	var defautArgoptions = {
+	var defautArgConfig = {
 			min: 1,
 			max: 9,
 			exclude: [],
@@ -37,62 +37,45 @@ var kabanizer = { core: {} };
     return 'incorrect';
   };
 	
-	// Fisher-Yates shuffle algorithm.
- 	function shuffle(arr) {
-    for(var i = arr.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var temp = arr[i];
-      arr[i] = arr[j];
-      arr[j] = temp;
-    }
-    return arr;
-  };
-	
-	var iteratorPrototype = {
-		next: function () {
-				var len = this.arr.length;
-				if (this.i < len) {
-					this.i += 1;
-					return this.arr[this.i - 1];				
-				}	
-				return null;
-			}		
-	};
-	
-	function IncludedIterator(arr, shuffle) {
-   this.arr = arr || [];	 
+	function IncludedIterator(arr) {
+   this.arr = arr || [];
 	 this.i = 0;		
-	 if (shuffle) {
-		 this.arr = shuffle(this.arr);
-	 }
-	}	
-	IncludedIterator.prototype = iteratorPrototype;
+	}
+	
+	IncludedIterator.prototype.next = function () {
+			var len = this.arr.length;
+			if (this.i < len) {
+				this.i += 1;
+				return this.arr[this.i - 1];				
+			}	
+			return null;
+	};
 
 	
-	function RangedIterator(start, end, shuffle) { 
-		var i, size;
+	function RangedIterator(start, end) {
 		this.start = start !== undefined ? start : null;
-		this.end = end !== undefined ? end : null;	 	
-		this.arr = [];
-		this.i = 0;
-		if (this.start !== null && this.end !== null) {
-			for(i = this.start; i <= this.end; i += 1) {
-				this.arr.push(i);
-			}
-			if (shuffle) {
-			 this.arr = shuffle(this.arr);
-			}
-		}
-	}	
-	RangedIterator.prototype = iteratorPrototype;
+		this.end = end !== undefined ? end : null;
+	 this.i = this.start;		
+	}
 	
-	function ArgumentGenerator (options) {
+	RangedIterator.prototype.next = function () {
 		
-		this.start = options.start !== undefined ? options.start : null;
-		this.end = options.end !== undefined ? options.end : null;
-		this.includedIter = new IncludedIterator(options.include, options.shuffle);
-		this.rangedIter = new RangedIterator(this.start, this.end, options.shuffle);
-		this.excludedVals = options.exclude || [];
+		if (this.start === null || this.end === null ) {
+				return null;
+		}
+		if (this.i <= this.end) {
+			this.i += 1;
+			return this.i - 1;
+		}	
+		return null;
+	};
+	
+	function ArgumentGenerator (config) {	
+		this.start = config.start !== undefined ? config.start : null;
+		this.end = config.end !== undefined ? config.end : null;
+		this.includedIter = new IncludedIterator(config.include);
+		this.rangedIter = new RangedIterator(this.start, this.end);
+		this.excludedVals = config.exclude || [];
 		this.excludedCounter = 0;
 		this.counter = 0;
 	}
@@ -100,7 +83,12 @@ var kabanizer = { core: {} };
 	ArgumentGenerator.prototype.next = function () {
 	
 			var valueFromIncluded = this.includedIter.next(),
-					valueFromRanged = null;
+					valueFromRanged = null,
+					rangedSize = 0;
+		
+			if (this.start !== null && this.end !== null) {
+				rangedSize = this.end - this.start + 1;
+			}
 			
 			if (valueFromIncluded) {				
 				if (this.excludedVals.indexOf(valueFromIncluded) >= 0) {					
@@ -110,13 +98,14 @@ var kabanizer = { core: {} };
 				return valueFromIncluded;
 			}
 		
+			
 			valueFromRanged = this.rangedIter.next();
 			if (valueFromRanged != null) { // includes 0
 				if (this.excludedVals.indexOf(valueFromRanged) >= 0) {
 					// prevent endless loop
 					this.excludedCounter += 1;
-					if (this.excludedCounter < this.rangedIter.arr.length) {						
-						return this.next();
+					if (this.excludedCounter < rangedSize) {
+						return this.next();						
 					}						
 				}
 				this.counter += 1;
@@ -127,15 +116,16 @@ var kabanizer = { core: {} };
 			// only if prior to that it produced at least one value
 			if (this.counter > 0) {
 				this.includedIter.i = 0;
-				this.rangedIter.i = 0;
+				this.rangedIter.i = this.start;
 				this.counter  = 0;
 				return this.next();
 			}
 			return null;
 	}
+	
 
-  function Exercise(types, options) { 	
-		var i = 0, j = 0, m = 0;
+  function Exercise(types, options) {  	
+		
   	this.types = types;
   	this.options = options;
     this.argumentVals = [];
@@ -145,45 +135,54 @@ var kabanizer = { core: {} };
 			throw new Error("types must have at least one element.");
 		}
 				
-		// holds number of challenges needed for each type
-    var typesBucket = this.distribute(this.options.numOfChallenges,
-  																	  this.options.types.length);
+		// distribute questions between differnt types from typesConf array
+    var sizesByType = this.distribute(this.options.numOfChallenges,
+  																	this.options.types.length);
 		
-		// for each type of challenge in types bucket
-		for (; i < typesBucket.length; i += 1) {
+		// for each type of challenge in options
+		for (var i = 0; i < sizesByType.length; i += 1) {
 			var typeOpts = options.types[i],
-					size = typesBucket[i],
+					size = sizesByType[i],
 					args = typeOpts.args || [];
 
 			//make generator for each argument
-			for(; j < args.length; j += 1) {
-					args[j].generator = new ArgumentGenerator(args[j]);					
+			var gens = [];
+			for(var k = 0; k < args.length; k += 1) {
+					gens.push(new ArgumentGenerator(args[k]));
 			}
-			
 			// for each challenge in typeBucket
-			for(j = 0; j < size; j += 1) {	
-				var data = { 
-					typeId: typeOpts.id,
-					values: []
-				};
+			for(var j = 0; j < size; j += 1) {	
+				var data = { typeId: typeOpts.id,	values: [] };
 				// for each argument get next value
-				for(m = 0; m < args.length; m += 1) {
-						data.values.push(args[m].generator.next()); 
+				for(var m = 0; m < gens.length; m += 1) {
+						data.values.push(gens[m].next());
 				}
 				this.argumentVals.push(data);			
 			}
-		}  	
-  	this.argumentVals = shuffle(this.argumentVals);
+		}	
+  	
+  	this.argumentVals = this.shuffle(this.argumentVals);
   }
  
  	Exercise.prototype.nextQuestion = function () {
       if (this.currIx < this.argumentVals.length) {
-				
+  			
         var data = this.argumentVals[this.currIx];
         this.currIx += 1;	
         return new Challenge(this.types[data.typeId], data.values);
       }
       return null;
+  };
+	
+  // Fisher-Yates shuffle algorithm.
+  Exercise.prototype.shuffle = function(arr) {
+    for(var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
+    }
+    return arr;
   };
 
   Exercise.prototype.distribute = function(size, groups) {
@@ -197,9 +196,8 @@ var kabanizer = { core: {} };
   };
 
 	kabanizer.core.Challenge = Challenge;
-  kabanizer.core.Exercise = Exercise;	
+  kabanizer.core.Exercise = Exercise;
 	kabanizer.core.ArgumentGenerator = ArgumentGenerator;
-	kabanizer.core.shuffle = shuffle;
 	
   // export object
   if (typeof module !== 'undefined' && module.exports) {
