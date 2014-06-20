@@ -61,7 +61,7 @@ var kabanizer = { core: {} };
 	RangedIterator.prototype.next = function () {
 		
 		if (this.start === null || this.end === null ) {
-				return null;
+				return null;git
 		}
 		if (this.i <= this.end) {
 			this.i += 1;

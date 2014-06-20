@@ -78,7 +78,6 @@ describe('Generating challenges in excercise', function() {
 		});
 		
 		var challenge1 = exercise.nextQuestion();	
-		console.log(challenge1.args);
 		expect(challenge1 instanceof Challenge).toBe(true);		
 		expect(challenge1.args[0]).toEqual(3);
 		expect(challenge1.args[1]).toEqual(3);		
